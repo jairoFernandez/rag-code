@@ -64,6 +64,9 @@ class FileProcessor:
         
          # Composer
          'composer.lock', 'vendor',
+
+         # docusaurus
+         '.docusaurus',
     }
 
     # Common file patterns to exclude
