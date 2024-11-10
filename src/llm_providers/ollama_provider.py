@@ -1,12 +1,10 @@
-from typing import Any, Dict, Optional
-from langchain_community.llms import Ollama
+from typing import Dict, Any
+from langchain_ollama import OllamaLLM
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
 from .base_provider import BaseLLMProvider
 
 class OllamaProvider(BaseLLMProvider):
     """Ollama LLM provider implementation."""
-    
     def __init__(self, model_name: str = "llama2", base_url: str = "http://localhost:11434"):
         """
         Initialize Ollama provider.
@@ -17,12 +15,11 @@ class OllamaProvider(BaseLLMProvider):
         """
         self.model_name = model_name
         self.base_url = base_url
-        self.llm = Ollama(model=model_name, base_url=base_url)
+        self.llm = OllamaLLM(model=model_name, base_url=base_url)
         
         # Define a template that instructs the model to focus on code-related questions
         self.template = """You are a helpful coding assistant. Use the following context to answer the question. 
         If you cannot answer the question based on the context, say so.
-
         Context: {context}
         
         Question: {question}
@@ -34,8 +31,6 @@ class OllamaProvider(BaseLLMProvider):
             input_variables=["context", "question"]
         )
         
-        self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
-    
     def ask_question(self, question: str, context: str) -> str:
         """
         Ask a question using the provided context.
@@ -48,7 +43,8 @@ class OllamaProvider(BaseLLMProvider):
             str: The answer from the LLM
         """
         try:
-            response = self.chain.run(question=question, context=context)
+            prompt_text = self.prompt.format(context=context, question=question)
+            response = self.llm.invoke(prompt_text)
             return response.strip()
         except Exception as e:
             return f"Error getting response from Ollama: {str(e)}"

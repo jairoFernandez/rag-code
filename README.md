@@ -9,6 +9,7 @@ This application allows you to create projects that read local repositories (fol
 - Store vectors locally using FAISS
 - Search through repository content using semantic similarity
 - Ask questions about your code using LLMs (Ollama by default, extensible to other providers)
+- Smart file filtering (excludes common non-source files and directories)
 - Update existing projects
 - List all projects and their metadata
 - Delete projects
@@ -88,7 +89,9 @@ python src/main.py ask my-project "Explain the main function" --model codellama
 python src/main.py ask my-project "What does this code do?" --config '{"temperature": 0.7}'
 ```
 
-## Supported File Types
+## File Processing
+
+### Supported File Types
 
 The application processes various text-based files including:
 - Python (.py)
@@ -106,6 +109,78 @@ The application processes various text-based files including:
 - Shell scripts (.sh, .bash)
 - Configuration files (.gitignore, .env)
 - Documentation files (README, LICENSE)
+
+### Excluded Directories
+
+The system automatically excludes common directories that typically don't contain source code:
+
+#### Version Control
+- `.git`, `.svn`, `.hg`
+
+#### Python
+- `venv`, `env`, `.env`, `.venv`
+- `__pycache__`, `.pytest_cache`, `.mypy_cache`
+- `build`, `dist`, `*.egg-info`
+
+#### Node.js
+- `node_modules`, `bower_components`
+- `.npm`, `.yarn`
+
+#### Java
+- `target`, `.gradle`, `build`, `out`
+
+#### Ruby
+- `.bundle`, `vendor/bundle`
+
+#### PHP
+- `vendor`
+
+#### Scala/SBT
+- `target`, `.metals`
+
+#### .NET
+- `bin`, `obj`, `packages`
+
+#### IDEs and Editors
+- `.idea`, `.vscode`, `.vs`
+- `.eclipse`, `.settings`
+
+#### Build and Dependencies
+- `dist`, `build`, `out`, `deps`
+
+#### Documentation
+- `_build`, `site`, `docs/_build`
+
+### Excluded Files
+
+The system also excludes common non-source files:
+
+#### Compiled Files
+- `*.pyc`, `*.pyo`, `*.pyd`, `*.so`
+- `*.dll`, `*.class`, `*.exe`
+
+#### Package Files
+- `*.jar`, `*.war`, `*.ear`
+- `*.egg`, `*.whl`
+
+#### Lock Files
+- `package-lock.json`, `yarn.lock`
+- `Gemfile.lock`, `poetry.lock`
+- `Pipfile.lock`
+
+#### Media and Binary Files
+- Images: `*.jpg`, `*.png`, `*.gif`, etc.
+- Fonts: `*.woff`, `*.ttf`, `*.eot`
+- Videos: `*.mp4`, `*.avi`, `*.mov`
+- Audio: `*.mp3`, `*.wav`
+
+#### Other
+- Logs: `*.log`
+- Databases: `*.sqlite`, `*.db`
+- Cache files: `*.cache`
+- Temporary files: `*~`, `*.bak`
+- Environment files: `.env*`
+- Compressed files: `*.zip`, `*.tar.gz`
 
 ## Project Structure
 
@@ -188,3 +263,4 @@ The system is designed to be extensible. To add a new provider:
   - Vector similarity search to find relevant code context
   - LLM processing to generate natural language answers
 - The default Ollama provider requires the Ollama service to be running locally
+- The system intelligently filters out non-source files and directories to focus on relevant code
