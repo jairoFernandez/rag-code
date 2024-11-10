@@ -15,7 +15,7 @@ class OllamaProvider(BaseLLMProvider):
         """
         self.model_name = model_name
         self.base_url = base_url
-        self.llm = OllamaLLM(model=model_name, base_url=base_url)
+        self.llm = OllamaLLM(model=model_name, base_url=base_url, temperature=0)
         
         # Define a template that instructs the model to focus on code-related questions
         self.template = """You are a helpful coding assistant. Use the following context to answer the question. 

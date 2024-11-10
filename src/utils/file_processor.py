@@ -54,7 +54,16 @@ class FileProcessor:
         'coverage', '.coverage', 'htmlcov',
         
         # Documentation builds
-        '_build', 'site', 'docs/_build'
+        '_build', 'site', 'docs/_build',
+
+        # terraform lock files
+        'terraform.tfstate', 'terraform.tfstate.*', '.terraform.lock.hcl',
+        
+         # Terraform
+         'terraform.tfvars',  '.terraform',
+        
+         # Composer
+         'composer.lock', 'vendor',
     }
 
     # Common file patterns to exclude
