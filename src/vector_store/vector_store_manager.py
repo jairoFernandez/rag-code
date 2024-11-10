@@ -1,7 +1,7 @@
 from typing import List, Dict
 import os
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
 
@@ -51,7 +51,8 @@ class VectorStoreManager:
             # Load existing vector store and add new documents
             self.vector_store = FAISS.load_local(
                 self.vector_store_path,
-                self.embeddings
+                self.embeddings,
+                allow_dangerous_deserialization=True
             )
             self.vector_store.add_documents(processed_docs)
         else:
@@ -73,7 +74,8 @@ class VectorStoreManager:
             if os.path.exists(self.vector_store_path):
                 self.vector_store = FAISS.load_local(
                     self.vector_store_path,
-                    self.embeddings
+                    self.embeddings,
+                    allow_dangerous_deserialization=True
                 )
             else:
                 raise ValueError("No vector store exists for this project")
