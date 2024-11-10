@@ -1,0 +1,2 @@
+[console_scripts]
+rag-code = rag_code_main:main

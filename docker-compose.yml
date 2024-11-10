@@ -1,0 +1,10 @@
+services:
+  rag-code:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["rag-code"]
+    working_dir: /app
+    volumes:
+      - ./projects:/app/projects
+      - ./vector_stores:/app/vector_stores
