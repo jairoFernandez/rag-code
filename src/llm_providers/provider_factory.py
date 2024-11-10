@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional
 from .base_provider import BaseLLMProvider
 from .ollama_provider import OllamaProvider
+from .openai_provider import OpenAIProvider
 
 class LLMProviderFactory:
     """Factory class for creating LLM providers."""
@@ -27,10 +28,11 @@ class LLMProviderFactory:
             base_url = config.get('base_url', 'http://localhost:11434')
             return OllamaProvider(model_name=model_name, base_url=base_url)
             
-        # Example of how to add OpenAI support:
-        # elif provider_type.lower() == 'openai':
-        #     api_key = config.get('api_key')
-        #     model_name = config.get('model_name', 'gpt-3.5-turbo')
-        #     return OpenAIProvider(api_key=api_key, model_name=model_name)
+        elif provider_type.lower() == 'openai':
+            api_key = config.get('api_key')
+            if not api_key:
+                raise ValueError("OpenAI provider requires an API key")
+            model_name = config.get('model_name', 'gpt-4-turbo')
+            return OpenAIProvider(api_key=api_key, model_name=model_name)
             
         raise ValueError(f"Unsupported provider type: {provider_type}")

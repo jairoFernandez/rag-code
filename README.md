@@ -37,6 +37,13 @@ pip install -r requirements.txt
    - Follow the installation instructions at [Ollama's website](https://ollama.ai)
    - Pull the default model: `ollama pull llama2`
 
+## Environment Setup
+
+1. Set up environment variables (if using OpenAI):
+```bash
+export OPENAI_API_KEY=<your_openai_api_key>
+```
+
 ## Usage
 
 The application provides a command-line interface with the following commands:
@@ -87,6 +94,9 @@ python src/main.py ask my-project "Explain the main function" --model codellama
 
 # Using custom provider configuration
 python src/main.py ask my-project "What does this code do?" --config '{"temperature": 0.7}'
+
+# Using OpenAI provider
+python src/main.py ask my-project "What is the purpose of the main function?" --provider openai --model gpt-3.5-turbo --config '{"api_key": "<your_openai_api_key>"}'
 ```
 
 ## File Processing
@@ -197,6 +207,7 @@ The system also excludes common non-source files:
 │       ├── __init__.py
 │       ├── base_provider.py    # Abstract base class for providers
 │       ├── ollama_provider.py  # Ollama implementation
+│       ├── openai_provider.py  # OpenAI implementation
 │       └── provider_factory.py # Factory for creating providers
 ├── projects/                   # Project metadata storage
 ├── vector_stores/             # FAISS vector stores
@@ -244,6 +255,12 @@ The system uses Ollama as the default LLM provider for answering questions about
 - Default model: llama2
 - Can be configured with different models (e.g., codellama)
 - Supports custom base URL and other configurations
+
+### OpenAI Provider
+- Uses the OpenAI API
+- Default model: gpt-3.5-turbo
+- Requires `OPENAI_API_KEY` environment variable
+- Supports custom configurations via `--config` option
 
 ### Adding New Providers
 The system is designed to be extensible. To add a new provider:
