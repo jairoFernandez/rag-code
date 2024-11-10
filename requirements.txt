@@ -5,3 +5,4 @@ sentence-transformers>=2.2.2
 python-magic>=0.4.27
 tiktoken>=0.5.1
 langchain_huggingface
+langchain-community>=0.0.10

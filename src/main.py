@@ -1,5 +1,6 @@
 import argparse
 import sys
+import json
 from project_manager import ProjectManager
 
 def main():
@@ -28,10 +29,32 @@ def main():
     search_parser.add_argument('query', help='Search query')
     search_parser.add_argument('-k', type=int, default=5, help='Number of results to return')
 
+    # Ask question command
+    ask_parser = subparsers.add_parser('ask', help='Ask a question about the code')
+    ask_parser.add_argument('name', help='Project name')
+    ask_parser.add_argument('question', help='Question about the code')
+    ask_parser.add_argument('-k', type=int, default=3, help='Number of context documents to use')
+    ask_parser.add_argument('--provider', default='ollama', help='LLM provider to use (default: ollama)')
+    ask_parser.add_argument('--model', help='Model name for the provider (default depends on provider)')
+    ask_parser.add_argument('--config', type=json.loads, help='Additional provider configuration as JSON')
+
     args = parser.parse_args()
 
+    # Configure LLM if using ask command
+    llm_config = None
+    if args.command == 'ask':
+        llm_config = {
+            "provider": args.provider,
+            "config": {
+                "model_name": args.model
+            } if args.model else {}
+        }
+        # Add any additional config if provided
+        if args.config:
+            llm_config["config"].update(args.config)
+
     # Initialize project manager
-    project_manager = ProjectManager()
+    project_manager = ProjectManager(llm_config=llm_config)
 
     if args.command == 'create':
         success = project_manager.create_project(args.name, args.path)
@@ -72,6 +95,22 @@ def main():
                 print("-" * 50)
         else:
             print("No results found.")
+
+    elif args.command == 'ask':
+        result = project_manager.ask_question(args.name, args.question, args.k)
+        if result["answer"]:
+            print("\nAnswer:")
+            print("-" * 50)
+            print(result["answer"])
+            print("\nSources used:")
+            print("-" * 50)
+            for source in result["sources"]:
+                print(f"\nFile: {source['file']}")
+                print("Relevant content:")
+                print(source['content'])
+                print("-" * 50)
+        else:
+            print("Could not generate an answer.")
 
     else:
         parser.print_help()

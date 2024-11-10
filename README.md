@@ -1,6 +1,6 @@
 # Local Repository RAG System
 
-This application allows you to create projects that read local repositories (folders), vectorize their content using LangChain, and store the vectors in a local FAISS database for efficient similarity search.
+This application allows you to create projects that read local repositories (folders), vectorize their content using LangChain, and store the vectors in a local FAISS database for efficient similarity search and question answering.
 
 ## Features
 
@@ -8,6 +8,7 @@ This application allows you to create projects that read local repositories (fol
 - Process and vectorize text files from repositories
 - Store vectors locally using FAISS
 - Search through repository content using semantic similarity
+- Ask questions about your code using LLMs (Ollama by default, extensible to other providers)
 - Update existing projects
 - List all projects and their metadata
 - Delete projects
@@ -30,6 +31,10 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```bash
 pip install -r requirements.txt
 ```
+
+4. Install Ollama (for local LLM support):
+   - Follow the installation instructions at [Ollama's website](https://ollama.ai)
+   - Pull the default model: `ollama pull llama2`
 
 ## Usage
 
@@ -61,6 +66,28 @@ python src/main.py search <project-name> "your search query" [-k number_of_resul
 ```
 The `-k` parameter is optional and defaults to 5 results.
 
+### Ask Questions About Code
+```bash
+python src/main.py ask <project-name> "your question" [-k number_of_context_docs] [--provider provider_name] [--model model_name] [--config additional_config]
+```
+Options:
+- `-k`: Number of context documents to use (default: 3)
+- `--provider`: LLM provider to use (default: ollama)
+- `--model`: Model name for the provider (default depends on provider)
+- `--config`: Additional provider configuration as JSON
+
+Examples:
+```bash
+# Using default Ollama provider with llama2
+python src/main.py ask my-project "How does the authentication system work?"
+
+# Using a specific Ollama model
+python src/main.py ask my-project "Explain the main function" --model codellama
+
+# Using custom provider configuration
+python src/main.py ask my-project "What does this code do?" --config '{"temperature": 0.7}'
+```
+
 ## Supported File Types
 
 The application processes various text-based files including:
@@ -89,8 +116,13 @@ The application processes various text-based files including:
 │   ├── project_manager.py      # Main project management logic
 │   ├── utils/
 │   │   └── file_processor.py   # File processing utilities
-│   └── vector_store/
-│       └── vector_store_manager.py  # Vector store management
+│   ├── vector_store/
+│   │   └── vector_store_manager.py  # Vector store management
+│   └── llm_providers/         # LLM provider implementations
+│       ├── __init__.py
+│       ├── base_provider.py    # Abstract base class for providers
+│       ├── ollama_provider.py  # Ollama implementation
+│       └── provider_factory.py # Factory for creating providers
 ├── projects/                   # Project metadata storage
 ├── vector_stores/             # FAISS vector stores
 └── requirements.txt           # Python dependencies
@@ -108,20 +140,41 @@ python src/main.py create my-project /path/to/local/repository
 python src/main.py search my-project "How does the authentication system work?"
 ```
 
-3. Update the project after repository changes:
+3. Ask a question about the code:
+```bash
+python src/main.py ask my-project "What is the purpose of the main function?"
+```
+
+4. Update the project after repository changes:
 ```bash
 python src/main.py update my-project
 ```
 
-4. List all projects:
+5. List all projects:
 ```bash
 python src/main.py list
 ```
 
-5. Delete a project:
+6. Delete a project:
 ```bash
 python src/main.py delete my-project
 ```
+
+## LLM Providers
+
+The system uses Ollama as the default LLM provider for answering questions about code. The provider system is extensible, allowing you to add support for other LLM providers like OpenAI. Each provider can be configured with specific models and parameters.
+
+### Default Provider (Ollama)
+- Uses the local Ollama service
+- Default model: llama2
+- Can be configured with different models (e.g., codellama)
+- Supports custom base URL and other configurations
+
+### Adding New Providers
+The system is designed to be extensible. To add a new provider:
+1. Create a new provider class implementing `BaseLLMProvider`
+2. Add the provider to the `LLMProviderFactory`
+3. Configure the provider using the `--provider` and `--config` options
 
 ## Notes
 
@@ -131,3 +184,7 @@ python src/main.py delete my-project
 - Each project maintains its own separate vector store
 - Text files are automatically split into chunks for better search results
 - The application uses the `all-MiniLM-L6-v2` model from sentence-transformers for generating embeddings
+- Questions are answered using a combination of:
+  - Vector similarity search to find relevant code context
+  - LLM processing to generate natural language answers
+- The default Ollama provider requires the Ollama service to be running locally

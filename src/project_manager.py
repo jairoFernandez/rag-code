@@ -5,13 +5,21 @@ from datetime import datetime
 
 from utils.file_processor import FileProcessor
 from vector_store.vector_store_manager import VectorStoreManager
+from llm_providers.provider_factory import LLMProviderFactory
 
 class ProjectManager:
-    def __init__(self, projects_dir: str = "projects"):
+    def __init__(self, projects_dir: str = "projects", llm_config: Optional[Dict] = None):
         """Initialize the project manager."""
         self.projects_dir = projects_dir
         self.projects_file = os.path.join(projects_dir, "projects.json")
         self.initialize_projects_directory()
+        
+        # Initialize LLM provider with default to Ollama if no config provided
+        self.llm_config = llm_config or {"provider": "ollama"}
+        self.llm_provider = LLMProviderFactory.create_provider(
+            self.llm_config["provider"],
+            self.llm_config.get("config", {})
+        )
 
     def initialize_projects_directory(self) -> None:
         """Create projects directory and projects.json if they don't exist."""
@@ -172,3 +180,53 @@ class ProjectManager:
         except Exception as e:
             print(f"Error searching project: {str(e)}")
             return []
+
+    def ask_question(self, name: str, question: str, k: int = 3) -> Dict[str, str]:
+        """
+        Ask a question about the code in a project.
+        
+        Args:
+            name (str): Project name
+            question (str): Question about the code
+            k (int): Number of similar documents to use as context
+            
+        Returns:
+            Dict[str, str]: Dictionary containing the answer and sources used
+        """
+        projects = self._load_projects()
+        if name not in projects:
+            return {
+                "answer": f"Error: Project '{name}' does not exist.",
+                "sources": []
+            }
+
+        try:
+            # Get relevant documents from vector store
+            vector_store = VectorStoreManager(name)
+            docs = vector_store.similarity_search(question, k=k)
+            
+            if not docs:
+                return {
+                    "answer": "No relevant code found to answer the question.",
+                    "sources": []
+                }
+            
+            # Combine document contents for context
+            context = "\n\n".join(doc.page_content for doc in docs)
+            
+            # Get answer from LLM
+            answer = self.llm_provider.ask_question(question, context)
+            
+            # Format sources
+            sources = [{"file": doc.metadata["source"], "content": doc.page_content} for doc in docs]
+            
+            return {
+                "answer": answer,
+                "sources": sources
+            }
+
+        except Exception as e:
+            return {
+                "answer": f"Error asking question: {str(e)}",
+                "sources": []
+            }
