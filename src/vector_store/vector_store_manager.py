@@ -2,7 +2,7 @@ from typing import List, Dict
 import os
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter, MarkdownTextSplitter
 from langchain.docstore.document import Document
 
 class VectorStoreManager:
@@ -18,11 +18,17 @@ class VectorStoreManager:
             model_kwargs={'device': 'cpu'}
         )
         
-        # Initialize text splitter
-        self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
+        # Initialize text splitters
+        self.default_text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,  # Smaller chunks for better granularity
+            chunk_overlap=50,
             length_function=len,
+            separators=["\n\n", "\n", " ", ""]
+        )
+        
+        self.markdown_splitter = MarkdownTextSplitter(
+            chunk_size=500,
+            chunk_overlap=50
         )
         
         # Create storage directory if it doesn't exist
@@ -30,17 +36,41 @@ class VectorStoreManager:
         
         self.vector_store = None
 
+    def is_markdown_file(self, file_path: str) -> bool:
+        """Check if a file is a markdown file."""
+        return file_path.lower().endswith(('.md', '.markdown'))
+
     def process_documents(self, documents: List[Dict[str, str]]) -> List[Document]:
         """Convert raw documents into LangChain documents and split them."""
-        langchain_docs = []
+        split_docs = []
         
         for doc in documents:
-            metadata = {"source": doc["path"]}
-            langchain_doc = Document(page_content=doc["content"], metadata=metadata)
-            langchain_docs.append(langchain_doc)
+            file_path = doc["path"]
+            content = doc["content"]
+            
+            # Create metadata with file information
+            metadata = {
+                "source": file_path,
+                "file_type": os.path.splitext(file_path)[1].lower(),
+                "is_markdown": self.is_markdown_file(file_path)
+            }
+            
+            # Create initial document
+            langchain_doc = Document(page_content=content, metadata=metadata)
+            
+            # Choose appropriate splitter based on file type
+            if self.is_markdown_file(file_path):
+                # Special handling for markdown files
+                chunks = self.markdown_splitter.split_text(content)
+                split_docs.extend([
+                    Document(page_content=chunk, metadata=metadata)
+                    for chunk in chunks
+                ])
+            else:
+                # Use default splitter for other files
+                chunks = self.default_text_splitter.split_documents([langchain_doc])
+                split_docs.extend(chunks)
         
-        # Split documents into chunks
-        split_docs = self.text_splitter.split_documents(langchain_docs)
         return split_docs
 
     def create_or_update_vector_store(self, documents: List[Dict[str, str]]) -> None:
@@ -54,7 +84,12 @@ class VectorStoreManager:
                 self.embeddings,
                 allow_dangerous_deserialization=True
             )
-            self.vector_store.add_documents(processed_docs)
+            # Delete existing documents if they exist
+            # This ensures we don't have duplicate or outdated content
+            self.vector_store = FAISS.from_documents(
+                processed_docs,
+                self.embeddings
+            )
         else:
             # Create new vector store
             self.vector_store = FAISS.from_documents(
@@ -80,7 +115,13 @@ class VectorStoreManager:
             else:
                 raise ValueError("No vector store exists for this project")
         
-        return self.vector_store.similarity_search(query, k=k)
+        # Perform search
+        results = self.vector_store.similarity_search(query, k=k)
+        
+        # Sort results to group chunks from the same file together
+        results.sort(key=lambda x: x.metadata["source"])
+        
+        return results
 
     def delete_vector_store(self) -> bool:
         """Delete the vector store for this project."""
