@@ -67,6 +67,8 @@ class FileProcessor:
 
          # docusaurus
          '.docusaurus',
+
+         '.idea', '.vscode', '.nx', '.nuxt', '.next', '.expo', '.expo-shared', '.expo-av', 'tmp', '.env', '.env.local'
     }
 
     # Common file patterns to exclude
