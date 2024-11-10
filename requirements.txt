@@ -1,0 +1,6 @@
+langchain>=0.0.300
+python-dotenv>=1.0.0
+faiss-cpu>=1.7.4
+sentence-transformers>=2.2.2
+python-magic>=0.4.27
+tiktoken>=0.5.1
