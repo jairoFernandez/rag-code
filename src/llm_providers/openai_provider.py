@@ -28,7 +28,8 @@ class OpenAIProvider(BaseLLMProvider):
             
             response = self.client.chat.completions.create(
                 model=self.model_name,
-                messages=messages
+                messages=messages,
+                temperature=0
             )
             return response.choices[0].message.content.strip()
         except Exception as e:
