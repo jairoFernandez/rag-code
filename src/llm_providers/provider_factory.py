@@ -23,7 +23,7 @@ class LLMProviderFactory:
         config = config or {}
         
         if provider_type.lower() == 'ollama':
-            model_name = config.get('model_name', 'llama2')
+            model_name = config.get('model_name', 'llama3.2:3b')
             base_url = config.get('base_url', 'http://localhost:11434')
             return OllamaProvider(model_name=model_name, base_url=base_url)
             

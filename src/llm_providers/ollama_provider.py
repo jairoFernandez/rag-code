@@ -5,7 +5,7 @@ from .base_provider import BaseLLMProvider
 
 class OllamaProvider(BaseLLMProvider):
     """Ollama LLM provider implementation."""
-    def __init__(self, model_name: str = "llama2", base_url: str = "http://localhost:11434"):
+    def __init__(self, model_name: str = "llama3.2:3b", base_url: str = "http://localhost:11434"):
         """
         Initialize Ollama provider.
         
